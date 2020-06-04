@@ -4,9 +4,11 @@ import Express from "express"
 import { ApolloServer } from "apollo-server-express"
 import { buildSchema } from "type-graphql"
 import { createConnection } from "typeorm"
+import cors from "cors"
 
 import { HelloResolver } from "./resolvers/Hello"
 import UserResolver from "./resolvers/user"
+import session from "./sessions/"
 
 const main = async () => {
   await createConnection()
@@ -17,9 +19,18 @@ const main = async () => {
 
   const appoloServer = new ApolloServer({
     schema,
+    context: ({ req }) => ({ req }),
   })
 
   const app = Express()
+
+  app.use(session())
+  app.use(
+    cors({
+      credentials: true,
+      origin: "http://localhost:3000", // frontend
+    })
+  )
 
   appoloServer.applyMiddleware({ app })
 

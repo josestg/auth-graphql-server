@@ -1,9 +1,10 @@
 import bcrypt from "bcrypt"
-import { Arg, Mutation, Query, Resolver } from "type-graphql"
+import { Arg, Mutation, Query, Resolver, Ctx } from "type-graphql"
 
 import { generateConfirmUserToken, sendEmail } from "../..//helpers"
 import User from "../../entities/User"
 import redis from "../../store/redis"
+import { AuthContext } from "../../interfaces"
 import RegisterInput from "./inputs/RegisterInput"
 
 @Resolver()
@@ -45,5 +46,32 @@ export default class UserResolver {
     await redis.del(token)
 
     return true
+  }
+
+  @Mutation(() => User, { nullable: true })
+  async login(
+    @Arg("email") email: string,
+    @Arg("password") password: string,
+    @Ctx() ctx: AuthContext
+  ): Promise<null | User> {
+    const user = await User.findOne({ where: { email } })
+    if (!user) return null
+
+    const isValid = bcrypt.compareSync(password, user.password)
+    if (!isValid) return null
+
+    if (!user.confirmed) return null
+
+    ctx.req.session!.userId = user.id
+
+    return user
+  }
+
+  @Query(() => User, { nullable: true })
+  async me(@Ctx() ctx: AuthContext): Promise<undefined | User> {
+    const userId = ctx.req.session!.userId
+    if (!userId) return undefined
+
+    return await User.findOne({ where: { id: userId } })
   }
 }
