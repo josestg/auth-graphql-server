@@ -1,0 +1,12 @@
+{
+  "name": "default",
+  "type": "postgres",
+  "host": "localhost",
+  "port": 5432,
+  "username": "jose",
+  "password": "jose",
+  "database": "auth_graphql_server",
+  "entities": ["src/entities/*.*"],
+  "synchronize": true,
+  "logging": true
+}
