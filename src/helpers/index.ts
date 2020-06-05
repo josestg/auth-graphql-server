@@ -2,6 +2,7 @@ import nodemailer from "nodemailer"
 import { v4 } from "uuid"
 
 import redis from "../store/redis"
+import { TokenPrefix } from "./types"
 
 // async..await is not allowed in global scope, must use a wrapper
 export async function sendEmail(
@@ -38,9 +39,13 @@ export async function sendEmail(
   // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
 }
 
-export async function generateConfirmUserToken(userId: number) {
+export function prefixToken(prefix: TokenPrefix, token: string): string {
+  return `${prefix}:${token}`
+}
+
+export async function generateUserToken(prefix: TokenPrefix, userId: number) {
   const token = v4()
-  await redis.set(token, userId, "ex", 60 * 60) // 1 hour
+  await redis.set(prefixToken(prefix, token), userId, "ex", 60 * 60) // 1 hour
   return token
 }
 
