@@ -19,7 +19,7 @@ const main = async () => {
 
   const appoloServer = new ApolloServer({
     schema,
-    context: ({ req }) => ({ req }),
+    context: ({ req, res }) => ({ req, res }),
   })
 
   const app = Express()

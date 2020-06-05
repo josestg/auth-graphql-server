@@ -115,4 +115,16 @@ export default class UserResolver {
 
     return user
   }
+
+  @Mutation(() => Boolean)
+  async logout(@Ctx() ctx: AuthContext): Promise<boolean> {
+    return new Promise<boolean>((resolve, reject) => {
+      ctx.req.session!.destroy((err) => {
+        if (err) return reject(false)
+      })
+
+      ctx.res.clearCookie("qid")
+      resolve(true)
+    })
+  }
 }
