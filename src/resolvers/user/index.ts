@@ -1,7 +1,11 @@
 import bcrypt from "bcrypt"
 import { Arg, Mutation, Query, Resolver, Ctx } from "type-graphql"
 
-import { generateConfirmUserToken, sendConfirmationMail } from "../..//helpers"
+import {
+  generateConfirmUserToken,
+  sendConfirmationMail,
+  sendForgotPasswordMail,
+} from "../..//helpers"
 import User from "../../entities/User"
 import redis from "../../store/redis"
 import { AuthContext } from "../../interfaces"
@@ -73,5 +77,38 @@ export default class UserResolver {
     if (!userId) return undefined
 
     return await User.findOne({ where: { id: userId } })
+  }
+
+  @Mutation(() => Boolean)
+  async forgotPassword(@Arg("email") email: string): Promise<boolean> {
+    const user = await User.findOne({ where: { email } })
+    if (!user || !user.confirmed) return true
+
+    const token = await generateConfirmUserToken(user.id)
+    sendForgotPasswordMail(email, token)
+
+    return true
+  }
+
+  @Mutation(() => User, { nullable: true })
+  async changePassword(
+    @Arg("password") password: string,
+    @Arg("token") token: string,
+    @Ctx() ctx: AuthContext
+  ) {
+    const userId = await redis.get(token)
+    if (!userId) return null
+
+    const user = await User.findOne({ where: { id: userId } })
+    if (!user) return null
+
+    user.password = bcrypt.hashSync(password, 12)
+    await user.save()
+    await redis.del(token)
+
+    // auto login
+    ctx.req.session!.userId = user.id
+
+    return user
   }
 }

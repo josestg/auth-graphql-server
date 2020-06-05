@@ -53,3 +53,13 @@ export function sendConfirmationMail(to: string, token: string) {
   }
   sendEmail(to, body)
 }
+
+export function sendForgotPasswordMail(to: string, token: string) {
+  const url = `http://localhost:3000/user/forgot-password/${token}`
+  const body = {
+    subject: "Change Password",
+    text: "Visit this link",
+    html: `<a href="${url}">${url}</a>`,
+  }
+  sendEmail(to, body)
+}
