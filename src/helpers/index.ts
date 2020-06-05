@@ -4,7 +4,10 @@ import { v4 } from "uuid"
 import redis from "../store/redis"
 
 // async..await is not allowed in global scope, must use a wrapper
-export async function sendEmail(to: string, token: string) {
+export async function sendEmail(
+  to: string,
+  body: { subject: string; text: string; html: string }
+) {
   // Generate test SMTP service account from ethereal.email
   // Only needed if you don't have a real mail account for testing
   const testAccount = await nodemailer.createTestAccount()
@@ -21,13 +24,10 @@ export async function sendEmail(to: string, token: string) {
   })
 
   // send mail with defined transport object
-  const url = createConfirmUserUrl(token)
   const info = await transporter.sendMail({
     from: '"Fred Foo 👻" <foo@example.com>', // sender address
     to: to, // list of receivers
-    subject: "Hello ✔", // Subject line
-    text: "Hello world?", // plain text body
-    html: `<a href="${url}">${url}</a>`, // html body
+    ...body,
   })
 
   console.log("Message sent: %s", info.messageId)
@@ -44,6 +44,12 @@ export async function generateConfirmUserToken(userId: number) {
   return token
 }
 
-export function createConfirmUserUrl(token: string) {
-  return `http://localhost:3000/user/confirm/${token}`
+export function sendConfirmationMail(to: string, token: string) {
+  const url = `http://localhost:3000/user/confirm/${token}`
+  const body = {
+    subject: "Confirmation",
+    text: "Please confirm your account",
+    html: `<a href="${url}">${url}</a>`,
+  }
+  sendEmail(to, body)
 }

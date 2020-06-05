@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt"
 import { Arg, Mutation, Query, Resolver, Ctx } from "type-graphql"
 
-import { generateConfirmUserToken, sendEmail } from "../..//helpers"
+import { generateConfirmUserToken, sendConfirmationMail } from "../..//helpers"
 import User from "../../entities/User"
 import redis from "../../store/redis"
 import { AuthContext } from "../../interfaces"
@@ -32,7 +32,7 @@ export default class UserResolver {
     }).save()
 
     const token = await generateConfirmUserToken(user.id)
-    sendEmail(email, token)
+    sendConfirmationMail(email, token)
 
     return user
   }
