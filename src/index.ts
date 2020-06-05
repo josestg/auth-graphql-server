@@ -11,7 +11,21 @@ import UserResolver from "./resolvers/user"
 import session from "./sessions/"
 
 const main = async () => {
-  await createConnection()
+  let tries = 5
+  while (tries > 0) {
+    try {
+      await createConnection()
+      break
+    } catch (e) {
+      console.log(e)
+      tries -= 1
+      await Promise.resolve(
+        setTimeout(() => {
+          console.log("Tries left: ", tries)
+        }, 5000)
+      )
+    }
+  }
 
   const schema = await buildSchema({
     resolvers: [HelloResolver, UserResolver],

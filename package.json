@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "main": "src/index.ts",
   "scripts": {
-    "start": "ts-node-dev src/index.ts"
+    "start": "ts-node-dev src/index.ts",
+    "build": "tsc -b"
   },
   "author": "Jose Alfredo Sitanggang <josealfredositanggang@gmail.com>",
   "license": "MIT",
