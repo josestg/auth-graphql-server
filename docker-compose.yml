@@ -1,0 +1,25 @@
+version: "3.7"
+services:
+  redis:
+    image: "redis:alpine"
+    volumes:
+      - ../data/redis:/data
+    entrypoint: redis-server --appendonly yes
+    restart: always
+  pg:
+    image: "postgres:9.4"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: mydb
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+  web:
+    image: "ts-server-graphql"
+    environment:
+      REDIS_HOST: redis
+    depends_on:
+      - redis
+      - pg
+    ports:
+      - "4000:4000"
