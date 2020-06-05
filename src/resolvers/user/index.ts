@@ -2,10 +2,11 @@ import bcrypt from "bcrypt"
 import { Arg, Mutation, Query, Resolver, Ctx } from "type-graphql"
 
 import {
-  generateConfirmUserToken,
+  generateUserToken,
   sendConfirmationMail,
   sendForgotPasswordMail,
-} from "../..//helpers"
+  prefixToken,
+} from "../../helpers"
 import User from "../../entities/User"
 import redis from "../../store/redis"
 import { AuthContext } from "../../interfaces"
@@ -35,7 +36,7 @@ export default class UserResolver {
       password: hashed,
     }).save()
 
-    const token = await generateConfirmUserToken(user.id)
+    const token = await generateUserToken("confirm-user", user.id)
     sendConfirmationMail(email, token)
 
     return user
@@ -43,11 +44,13 @@ export default class UserResolver {
 
   @Mutation(() => Boolean)
   async confirmUser(@Arg("token") token: string): Promise<boolean> {
-    const userId = await redis.get(token)
+    const key = prefixToken("confirm-user", token)
+    const userId = await redis.get(key)
+
     if (!userId) return false
 
     await User.update({ id: parseInt(userId) }, { confirmed: true })
-    await redis.del(token)
+    await redis.del(key)
 
     return true
   }
@@ -84,7 +87,7 @@ export default class UserResolver {
     const user = await User.findOne({ where: { email } })
     if (!user || !user.confirmed) return true
 
-    const token = await generateConfirmUserToken(user.id)
+    const token = await generateUserToken("forgot-password", user.id)
     sendForgotPasswordMail(email, token)
 
     return true
@@ -96,7 +99,8 @@ export default class UserResolver {
     @Arg("token") token: string,
     @Ctx() ctx: AuthContext
   ) {
-    const userId = await redis.get(token)
+    const key = prefixToken("forgot-password", token)
+    const userId = await redis.get(key)
     if (!userId) return null
 
     const user = await User.findOne({ where: { id: userId } })
@@ -104,7 +108,7 @@ export default class UserResolver {
 
     user.password = bcrypt.hashSync(password, 12)
     await user.save()
-    await redis.del(token)
+    await redis.del(key)
 
     // auto login
     ctx.req.session!.userId = user.id
